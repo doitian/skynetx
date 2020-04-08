@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+#
+# Summary: 生成新应用
+#
+# Usage: sx new-app NAME
+#
+# 一个应用就是 skynet 的一个配置文件，配置文件会保存在 boot/NAME.lua
+# 中。对应的启动文件在 service/start_NAME.lua 中。
+
+set -e
+[ -n "$SX_DEBUG" ] && set -x
+
+if [ -z "$SX_ROOT" ]; then
+  if [ -n "$SX_QUIT" ]; then
+    echo "sx: 无法定位 SX_ROOT"
+    exit 1
+  fi
+  export SX_QUIT=true
+  exec sx new "$@"
+fi
+
+function abort() {
+  { if [ "$#" -eq 0 ]; then cat -
+    else echo "sx: $*"
+    fi
+  } >&2
+  exit 1
+}
+
+name="$1"
+
+[ -z "$name" ] && abort "sx new-app NAME"
+[ -d "boot" ] && [ -d "service" ] || abort "必须在项目根目录中运行"
+echo "$name" | grep -q '^[-._a-zA-Z0-9]\+' || abort "$name 名字非法，只允许包含 - . _ 字母和数字"
+
+if ! [ -f "boot/$name.lua" ]; then
+  cat "$SX_ROOT/template/boot/helloworld.lua" | sed "s/start_helloworld/start_$name/" > "boot/$name.lua"
+  echo "boot/$name.lua 已经生成"
+else
+  echo "boot/$name.lua 已经存在"
+fi
+
+if ! [ -f "service/start_$name.lua" ]; then
+  cat "$SX_ROOT/template/service/start_helloworld.lua" | sed "s/helloworld/$name/" > "service/start_$name.lua"
+  echo "service/start_$name.lua 已经生成"
+else
+  echo "service/start_$name.lua 已经存在"
+fi
+
+echo "应用 $name 已经生成，使用下面命令测试"
+echo
+echo "    sx skynet boot/$name.lua"

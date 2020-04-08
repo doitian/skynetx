@@ -1,0 +1,28 @@
+image: doitian/skynetx
+
+variables:
+  # set group/project to the github project name with namespace
+  # CONTAINER_REPOSITORY: 
+
+stages:
+  - test
+  - release
+
+luacheck:
+  stage: test
+  script: luacheck .
+
+build_image:
+  image: docker:git
+  services:
+    - docker:dind
+  stage: release
+  script:
+    - test -n "$CONTAINER_REPOSITORY"
+    - docker login -u gitlab-ci-token -p $CI_BUILD_TOKEN $CONTAINER_REPOSITORY
+    - docker build -t $CONTAINER_REPOSITORY:${CI_BUILD_TAG} .
+    - docker push $CONTAINER_REPOSITORY:${CI_BUILD_TAG}
+    - docker tag $CONTAINER_REPOSITORY:${CI_BUILD_TAG} $CONTAINER_REPOSITORY:latest
+    - docker push $CONTAINER_REPOSITORY:latest
+  only:
+    - tags

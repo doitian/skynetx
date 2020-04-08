@@ -1,0 +1,61 @@
+#!/usr/bin/env bash
+#
+# Summary: 让 JSON 日志容易被人读
+#
+# Usage: sx pplog [-c] [-M] [FILE]
+#
+# 可以查看文件，也可以用通过 shell pipe 连接上个命令的输出，例
+#
+#     sx skynet boot/helloworld.lua | sx pplog
+#
+# 支持选项
+#
+# -c  紧凑在一行内显示
+# -M  不显示颜色
+#
+# 如果想使用 jq 进一步过滤，继续 pipe 到 jq，比如 WARNING 及以上级别
+#
+#     sx skynet boot/helloworld.lua | sx pplog | jq "select(.level <= 5)"
+
+set -e
+[ -n "$SX_DEBUG" ] && set -x
+
+# Provide sx completions
+if [ "$1" = "--complete" ]; then
+  args=("$@")
+  idx=$(( $# - 1 ))
+  prev=
+  while [ $idx -gt 0 ]; do
+    if [[ "${args[idx]}" = -* ]]; then
+      idx=$(( idx - 1 ))
+    else
+      prev="${args[idx]}"
+      break
+    fi
+  done
+
+  echo -c
+  echo -M
+  if [ $idx -eq 0 ]; then
+    echo __file__
+  fi
+  exit 0
+fi
+
+function abort() {
+  { if [ "$#" -eq 0 ]; then cat -
+    else echo "sx: $*"
+    fi
+  } >&2
+  exit 1
+}
+
+type jq &> /dev/null || abort "找不到 jq，前往 https://stedolan.github.io/jq/download/ 下载安装"
+
+exec jq -R --unbuffered '
+if test("^\\[:[0-9a-f]{8}\\] ") then { address: .[4:10], msg: .[12:] } else { msg: . } end
+| . as $input
+| try (.msg | fromjson | .address = $input.address) catch $input
+| (try ["FATAL","FATAL","FATAL","FATAL","ERROR","WARN","INFO","DEBUG"][.level] catch "INFO") as $level
+| .msg = "\($level|.[0:1]) \(if has("time") then .time else "-" end) \($level) \(if has("name") then ("["+.name+"] ") else "" end)\(if has("msg") then .msg else "" end)"
+' "$@"

@@ -1,0 +1,103 @@
+#!/usr/bin/env bash
+#
+# Summary: 运行集成测试
+#
+# Usage: sx integration DIR
+#
+# integration 会强制必须要设置环境变量 SX_DB_TEST_URL 用来指定测试用的数据库，
+# 而且必须和 SX_DB_URL 不同。如果没有使用数据库，可以随便指定一个。
+#
+#     SX_DB_TEST_URL=1 sx integration
+#
+# integration 目录下所有 `_integration.lua` 文件都会被执行。默认使用 `sx skynet'。
+#
+# 如果想使用 `sx lua' 在第一行添加 
+#
+#     #!sx lua
+#
+# Skynet 运行目标是配置文件，可以使用下面的小技巧把配置文件和启动文件放在一个 lua 文件中：
+#
+#     if not _G then
+#       -- skynet config
+#     else
+#       -- skynet service
+#     end
+#
+# Skynet 测试必须使用 `skynet.abort()` 退出，否则测试会一直等待。如果出错使用 `os.exit(1)` 退出。
+
+set -e
+[ -n "$SX_DEBUG" ] && set -x
+
+# Provide sx completions
+if [ "$1" = "--complete" ]; then
+  if [ $# -eq 1 ]; then
+    echo '__directory__'
+  fi
+  exit 0
+fi
+
+function abort() {
+  { if [ "$#" -eq 0 ]; then cat -
+    else echo "sx: $*"
+    fi
+  } >&2
+  exit 1
+}
+
+function colortext()
+{
+  echo -e "\e[1;$2m$1\e[0m"
+}
+
+[ -z "$SX_DB_TEST_URL" ] && abort '必须配置环境变量 SX_DB_TEST_URL'
+[ "$SX_DB_TEST_URL" = "$SX_DB_URL" ] && abort 'SX_DB_TEST_URL 不能和 SX_DB_URL 相同'
+
+all_status=0
+
+function run_one() {
+  local test_output test_status
+  local test_file="$1"
+
+  if [ -d "$test_file" ]; then
+    find "$test_file" -name "*_integration.lua" -type f -print0 | xargs -0 sx-integration
+    test_status="$?"
+    if [ "$test_status" != 0 ]; then
+      all_status="$test_status"
+    fi
+  elif [ -f "$test_file" ]; then
+    echo -n "RUN ${test_file%.lua}"
+    if head -n 1 "$test_file" | grep -q 'lua$'; then
+      set +e
+      test_output=$(sx lua "$test_file" 2>&1)
+    else
+      set +e
+      test_output=$(sx skynet "$test_file" 2>&1)
+    fi
+    test_status="$?"
+    set -e
+    if [ "$test_status" = 0 ]; then
+      echo " ... $(colortext PASS 32)"
+    else
+      all_status="$test_status"
+      echo " ... $(colortext FAIL 31)"
+      echo 
+      colortext "$test_output" 31
+      echo
+      all_status="$test_status"
+    fi
+  else
+    echo "RUN ${test_file} ... $(colortext MISS 31)"
+    all_status=1
+  fi
+}
+
+if [ "$#" = 0 ]; then
+  run_one integration
+else
+  for test_file; do
+    run_one "$test_file"
+  done
+fi
+
+exit "$all_status"
+

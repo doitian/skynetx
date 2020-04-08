@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+# Summary: 列出所有子命令
+# Usage: sx commands
+
+set -e
+[ -n "$SX_DEBUG" ] && set -x
+
+IFS=: paths=($PATH)
+
+shopt -s nullglob
+
+{ for path in "${paths[@]}"; do
+    for command in "${path}/sx-"*; do
+      echo "${command##*sx-}"
+    done
+  done
+  echo exec
+  echo env
+  echo lua
+  echo luac
+  echo skynet
+} | sort | uniq

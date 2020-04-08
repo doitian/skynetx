@@ -1,0 +1,100 @@
+image: doitian/lua
+
+variables:
+  SX_DB_TEST_URL: NONE
+
+stages:
+  - check
+  - build
+  - test
+  - package
+  - deploy
+
+luacheck:
+  stage: check
+  script: luacheck .
+  tags:
+    - docker
+
+build-alpine:
+  stage: build
+  script:
+    - make
+  artifacts:
+    untracked: true
+  tags:
+    - docker
+
+test:
+  stage: test
+  script:
+    - busted
+    - make integration
+  tags:
+    - docker
+  dependencies:
+    - build-alpine
+
+skynetx-alpine:
+  stage: package
+  script:
+    - make PREFIX=skynetx-alpine-${CI_BUILD_REF_NAME} install
+  artifacts:
+    name: skynetx-alpine-${CI_BUILD_REF_NAME}
+    paths:
+      - skynetx-alpine-${CI_BUILD_REF_NAME}
+  only:
+    - master
+    - tags
+  tags:
+    - docker
+  dependencies:
+    - build-alpine
+
+skynetx-ubuntu:
+  image: doitian/skynetx:builder-ubuntu
+  stage: package
+  script:
+    - make
+    - make PREFIX=skynetx-ubuntu-${CI_BUILD_REF_NAME} install
+  artifacts:
+    name: skynetx-ubuntu-${CI_BUILD_REF_NAME}
+    paths:
+      - skynetx-ubuntu-${CI_BUILD_REF_NAME}
+  only:
+    - master
+    - tags
+  tags:
+    - docker
+  dependencies: []
+
+skynetx-mac:
+  stage: package
+  script:
+    - make
+    - make PREFIX=skynetx-macos-${CI_BUILD_REF_NAME} install
+  artifacts:
+    name: skynetx-macos-${CI_BUILD_REF_NAME}
+    paths:
+      - skynetx-macos-${CI_BUILD_REF_NAME}
+  only:
+    - master
+    - tags
+  tags:
+    - macos
+  dependencies: []
+
+skynetx-doc:
+  stage: package
+  script:
+    - make doc
+  artifacts:
+    name: skynetx-doc
+    paths:
+      - doc/html
+  only:
+    - master
+    - tags
+  tags:
+    - docker
+  dependencies: []

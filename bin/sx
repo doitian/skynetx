@@ -1,0 +1,145 @@
+#!/usr/bin/env bash
+# Summary: SkynetX CLI
+# Usage: sx [-f <file>] <command> [<args>]
+
+set -e
+[ -n "$SX_DEBUG" ] && set -x
+
+if type realpath &> /dev/null; then
+  abs_dirname() {
+    local path="$(realpath "$1")"
+    echo "${path%/*}"
+  }
+else
+  abs_dirname() {
+    local cwd="$PWD"
+    local path="$1"
+
+    while [ -n "$path" ]; do
+      local name="${path##*/}"
+      if [ "$name" != "$path" ]; then
+        cd "${path%/*}"
+      fi
+      path="$(readlink "$name" || true)"
+    done
+
+    pwd
+    cd "$cwd"
+  }
+fi
+
+function abort() {
+  { if [ "$#" -eq 0 ]; then cat -
+    else echo "sx: $*"
+    fi
+  } >&2
+  exit 1
+}
+
+function link_rsyslog_file() {
+  if [ -n "$SX_LINK_SYSLOG_DIR" -a "$SX_LOGSERVICE" = sx_syslog ]; then
+    ln -snf "${SX_LINK_SYSLOG_DIR%/}/$SX_LOGGER.log" rsyslog.log
+  fi
+}
+
+command="$1"
+[ 0 != "$#" ] && shift
+
+DOTENV_FILE="${DOTENV_FILE:-.env}"
+if [ "$command" = "-f" ]; then
+  DOTENV_FILE="$1"
+  [ -z "$DOTENV_FILE" ] && abort '-f 必须要指定 .env 文件的路径'
+  shift
+  command="$1"
+  shift
+fi
+
+if [ "$DOTENV_FILE" != "NONE" ] && [ -f "$DOTENV_FILE" ]; then
+  eval $(grep "^[^#]*=.*" "$DOTENV_FILE" | sed 's/^/export /') || abort "读取环境变量错误 \`$DOTENV_FILE'"
+fi
+
+bin_path="$(abs_dirname "$0")"
+export PATH="$bin_path:$PATH"
+export SX_ROOT="${bin_path%/*}"
+LUA_PATH="src/?.lua;config/?.lua;shared/?.lua;$SX_ROOT/src/?.lua;$LUA_PATH"
+LUA_CPATH="$SX_ROOT/csrc/?.so;$LUA_CPATH"
+export LUA_PATH="${LUA_PATH%";"}"
+export LUA_CPATH="${LUA_CPATH%";"}"
+export SX_SNAX_PATH="snax/?.lua;$SX_ROOT/snax/?.lua"
+export SX_SERVICE_PATH="service/?.lua;$SX_ROOT/service/?.lua"
+export SX_CSERVICE_PATH="$SX_ROOT/cservice/?.so"
+export SX_THREAD="${SX_THREAD:-8}"
+export SX_LUA_LOADER="${SX_LUA_LOADER:-$SX_ROOT/src/loader.lua}"
+export SX_ENV="${SX_ENV:-dev}"
+export SX_DB_URL="${SX_DB_URL}"
+export SX_DB_TEST_URL="${SX_DB_TEST_URL}"
+export SX_LOGSERVICE="${SX_LOGSERVICE:-logger}"
+export SX_LOGLEVEL="${SX_LOGLEVEL:-debug}"
+export SX_PORT="${SX_PORT:-9700}"
+
+SX_LOGGER="${SX_LOGGER}"
+if [[ "$SX_LOGGER" = *__GIT_REV__* ]]; then
+  git_rev="$(git --no-pager log -n 1 --pretty='format:%ai %h' | awk '{gsub(/-/, "", $1); print $1 "-" $4}')"
+  SX_LOGGER="$(echo "$SX_LOGGER" | sed "s/__GIT_REV__/$git_rev/g")"
+fi
+export SX_LOGGER
+
+case "$command" in
+"" )
+  { sx-version
+    sx-help
+  } | abort
+  ;;
+-v | --version )
+  exec sx-version
+  ;;
+-h | --help )
+  exec sx-help
+  ;;
+skynet )
+  link_rsyslog_file
+  if [ -z "$1" ]; then
+    exec skynet "$@"
+  else
+    export SX_SKYNET_CONFIG="$1"
+    SX_SKYNET_CONFIG_NAME="$(basename "$1")"
+    export SX_SKYNET_CONFIG_NAME="${SX_SKYNET_CONFIG_NAME%.lua}"
+
+    exec skynet "$@"
+  fi
+  ;;
+lua | luac | skynet )
+  exec "$command" "$@"
+  ;;
+exec )
+  exec "$@"
+  ;;
+env )
+  echo "export SX_ROOT="$SX_ROOT""
+  echo "export LUA_PATH="$LUA_PATH""
+  echo "export LUA_CPATH="$LUA_CPATH""
+  echo "export SX_SNAX_PATH="$SX_SNAX_PATH""
+  echo "export SX_SERVICE_PATH="$SX_SERVICE_PATH""
+  echo "export SX_CSERVICE_PATH="$SX_CSERVICE_PATH""
+  echo "export SX_THREAD="$SX_THREAD""
+  echo "export SX_LUA_LOADER="$SX_LUA_LOADER""
+  echo "export SX_ENV="$SX_ENV""
+  echo "export SX_DB_URL="$SX_DB_URL""
+  echo "export SX_DB_TEST_URL="$SX_DB_TEST_URL""
+  echo "export SX_LOGSERVICE="$SX_LOGSERVICE""
+  echo "export SX_LOGLEVEL="$SX_LOGLEVEL""
+  echo "export SX_LOGGER="$SX_LOGGER""
+  echo "export SX_PORT="$SX_PORT""
+  echo "export PATH="$PATH""
+  ;;
+* )
+  command_path="$(command -v "sx-$command" || true)"
+  [ -n "$command_path" ] || abort "无此命令 \`$command'"
+
+  if [ "$1" = --help ]; then
+    exec sx-help "$command"
+  else
+    exec "$command_path" "$@"
+  fi
+  ;;
+esac

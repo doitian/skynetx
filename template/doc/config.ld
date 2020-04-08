@@ -1,0 +1,11 @@
+-- vim: ft=lua:
+project = '$PROJECT_NAME v0.0.0'
+full_description = '详细文档请查看@{README.md|这里}.'
+title = '$PROJECT_NAME'
+dir = 'html'
+-- style = '!fixed'
+-- use_markdown_titles = true
+topics = { '../README.md' }
+format = 'markdown'
+sort_modules = true
+file = { '../src', '../service', '../snax' }

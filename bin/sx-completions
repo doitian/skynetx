@@ -1,0 +1,69 @@
+#!/usr/bin/env bash
+# Usage: sx completions <command> [arg1 arg2...]
+#
+# Summary: 自动补全工具 (Since v2.0.22)
+#
+# 在 .bash_profile .bashrc 或者 .zshrc 加上下面的内容就可以激活自动补全
+#
+#     type sx &>/dev/null && eval $(sx completions --init)
+
+set -e
+[ -n "$SX_DEBUG" ] && set -x
+
+COMMAND="$1"
+if [ -z "$COMMAND" ]; then
+  sx-help --usage completions >&2
+  exit 1
+fi
+
+# Provide sx completions
+if [ "$COMMAND" = "--complete" ]; then
+  if [ $# -eq 1 ]; then
+    echo --init
+    exec sx-commands
+  fi
+  exit 0
+fi
+
+if [ "$COMMAND" = "--init" ]; then
+  shell="$2"
+  if [ -z "$shell" ]; then
+    shell="$(ps -p "$PPID" -o 'args=' 2>/dev/null || true)"
+    shell="${shell%% *}"
+    shell="${shell##-}"
+    shell="${shell:-$SHELL}"
+    shell="${shell##*/}"
+  fi
+  case "$shell" in
+    bash|zsh)
+      echo "source '$SX_ROOT/completions/sx.$shell'"
+      ;;
+  esac
+fi
+
+if [ $# -eq 1 ]; then
+  echo --help
+elif [ "$2" = "--help" ]; then
+  exit 0
+fi
+
+case "$COMMAND" in
+  exec)
+    if [ $# -eq 1 ]; then
+      echo __command__
+    fi
+    ;;
+  skynet|lua|luac)
+    if [ $# -eq 1 ]; then
+      echo __file__
+    fi
+    ;;
+  *)
+    COMMAND_PATH="$(command -v "sx-$COMMAND")"
+
+    if grep -iE "^([#%]|--|//) provide sx completions" "$COMMAND_PATH" >/dev/null; then
+      shift
+      exec "$COMMAND_PATH" --complete "$@"
+    fi
+    ;;
+esac

@@ -1,0 +1,7 @@
+.DS_Store
+/.gitmodules
+/Makefile
+/doc
+!/doc/config.ld.in
+/stdlib-*.rockspec
+!/stdlib-git-*.rockspec

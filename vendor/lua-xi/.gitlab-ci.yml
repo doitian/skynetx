@@ -1,0 +1,30 @@
+image: doitian/lua
+
+stages:
+  - test
+  - build
+  - deploy
+
+luacheck:
+  stage: test
+  script: 
+    - luacheck -v
+    - luacheck -q src
+
+test:
+  stage: test
+  script:
+    - busted --version
+    - busted
+
+doc:
+  stage: build
+  script:
+    - make doc
+  only:
+    - master
+    - tags
+  artifacts:
+    name: doc
+    paths:
+      - doc/html

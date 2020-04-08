@@ -1,0 +1,112 @@
+/doc/html
+/skynetx*
+*.bak
+/testbed
+/bin/sx-version
+
+# Vendor
+
+/include
+
+/vendor/jemalloc/configure.lineno
+
+/vendor/luaossl/config.h
+/vendor/luaossl/src/config.h
+
+/src/xi
+
+/bin/skynet
+/bin/lua
+/bin/luac
+
+/src/cjson
+/src/openssl
+/src/std
+/src/openssl.lua
+/src/std.lua
+/src/cluster.lua
+/src/datacenter.lua
+/src/dns.lua
+/src/http
+/src/loader.lua
+/src/md5.lua
+/src/mongo.lua
+/src/mqueue.lua
+/src/multicast.lua
+/src/mysql.lua
+/src/redis.lua
+/src/sharedata
+/src/sharedata.lua
+/src/sharemap.lua
+/src/skynet
+/src/skynet.lua
+/src/snax
+/src/snax.lua
+/src/socket.lua
+/src/socketchannel.lua
+/src/sproto.lua
+/src/sprotoloader.lua
+/src/sprotoparser.lua
+
+/service/bootstrap.lua
+/service/cdummy.lua
+/service/clusterd.lua
+/service/clusterproxy.lua
+/service/cmaster.lua
+/service/cmemory.lua
+/service/console.lua
+/service/cslave.lua
+/service/datacenterd.lua
+/service/dbg.lua
+/service/debug_agent.lua
+/service/debug_console.lua
+/service/gate.lua
+/service/launcher.lua
+/service/multicastd.lua
+/service/service_mgr.lua
+/service/sharedatad.lua
+/service/snaxd.lua
+
+# Created by https://www.gitignore.io/api/lua
+
+### Lua ###
+# Compiled Lua sources
+luac.out
+
+# luarocks build files
+*.src.rock
+*.zip
+*.tar.gz
+
+# Object files
+*.o
+*.os
+*.ko
+*.obj
+*.elf
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Libraries
+*.lib
+*.a
+*.la
+*.lo
+*.def
+*.exp
+
+# Shared objects (inc. Windows DLLs)
+*.dll
+*.so
+*.so.*
+*.dylib
+
+# Executables
+*.exe
+*.out
+*.app
+*.i*86
+*.x86_64
+*.hex

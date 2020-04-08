@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+#
+# Summary: 生成新项目
+#
+# Usage: sx new NAME
+#
+# 一个项目有固定的目录结构，可以在项目根目录中使用 sx new-app 创建应用。
+#
+# 初始已经创建了一个 server 应用，可以启动进行测试
+#
+#     sx skynet boot/helloworld.lua
+
+set -e
+[ -n "$SX_DEBUG" ] && set -x
+
+if [ -z "$SX_ROOT" ]; then
+  if [ -n "$SX_QUIT" ]; then
+    echo "sx: 无法定位 SX_ROOT"
+    exit 1
+  fi
+  export SX_QUIT=true
+  exec sx new "$@"
+fi
+
+function abort() {
+  { if [ "$#" -eq 0 ]; then cat -
+    else echo "sx: $*"
+    fi
+  } >&2
+  exit 1
+}
+
+dir="$1"
+
+[ -z "$dir" ] && abort "sx new NAME"
+[ -e "$dir" ] && abort "$dir 已经存在"
+
+name="$(basename "$dir")"
+echo "$name" | grep -q '^[-._a-zA-Z0-9]\+' || abort "$name 名字非法，只允许包含 - . _ 字母和数字"
+
+cp -r "$SX_ROOT/template" "$dir"
+cat "$SX_ROOT/template/README.md" | sed -e "s/\$PROJECT_NAME/$name/" -e "s/\$SX_VERSION/$(sx version)/" > "$dir/README.md"
+cat "$SX_ROOT/template/doc/config.ld" | sed -e "s/\$PROJECT_NAME/$name/" > "$dir/doc/config.ld"
+
+echo "项目 $name 已经生成，使用下面命令测试"
+echo
+echo "    cd \"$dir\" && sx skynet boot/helloworld.lua"

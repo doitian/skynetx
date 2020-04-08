@@ -1,0 +1,38 @@
+; -*- conf -*-
+; EditorConfig is awesome: http://EditorConfig.org
+
+; top-most EditorConfig file
+root = true
+
+; Unix-style newlines with a newline ending every file
+[*]
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = false
+charset = utf-8
+indent_style = space
+indent_size = 2
+tab_width = 2
+
+[*.cs]
+indent_style = tab
+indent_size = 2
+
+[*.md]
+indent_style = space
+indent_size = 4
+[*.markdown]
+indent_style = space
+indent_size = 4
+
+[Makefile]
+indent_style = tab
+indent_size = 4
+
+[*.go]
+indent_style = tab
+indent_size = 2
+
+[*.lua]
+indent_style = space
+indent_size = 2

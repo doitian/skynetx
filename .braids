@@ -1,0 +1,44 @@
+{
+  "vendor/jemalloc": {
+    "url": "https://github.com/jemalloc/jemalloc.git",
+    "remote": "master/braid/vendor/jemalloc",
+    "branch": "master",
+    "squashed": true,
+    "revision": "0110fa8451af905affd77c3bea0d545fee2251b2"
+  },
+  "vendor/lua-cjson": {
+    "url": "https://github.com/cloudwu/lua-cjson.git",
+    "remote": "master/braid/vendor/lua-cjson",
+    "branch": "master",
+    "squashed": true,
+    "revision": "f5ee43d284d24c100bb11ecf286a04999bca6514"
+  },
+  "vendor/lua-stdlib": {
+    "url": "https://github.com/lua-stdlib/lua-stdlib.git",
+    "remote": "master/braid/vendor/lua-stdlib",
+    "branch": "master",
+    "squashed": true,
+    "revision": "c529fb910ea83f094b3ea1cc14169cc1e65b30fd"
+  },
+  "vendor/lua-xi": {
+    "url": "https://github.com/doitian/lua-xi",
+    "remote": "master/braid/vendor/lua-xi",
+    "branch": "master",
+    "squashed": true,
+    "revision": "fa979588975268795b927e9efbf985dac2a47f43"
+  },
+  "vendor/luaossl": {
+    "url": "https://github.com/wahern/luaossl",
+    "remote": "master/braid/vendor/luaossl",
+    "branch": "master",
+    "squashed": true,
+    "revision": "cb727f97f2e00512c70631210de2d8b951e81587"
+  },
+  "vendor/skynet": {
+    "url": "https://github.com/cloudwu/skynet.git",
+    "remote": "master/braid/vendor/skynet",
+    "branch": "master",
+    "squashed": true,
+    "revision": "b00b006c4a520302309fd4fa198e74cd84e9f6d5"
+  }
+}
